@@ -53,6 +53,7 @@ float sumarValorCarta (tMano & mano);
 bool determinarGanador(float valorJugador, float valorOrdenador);
 void jugarModoB (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta & carta);
 void robarJugador (tMazo & mazo, tMano & mano, tCarta & carta, int max_cartas);
+bool comprobacionRespuesta (string respuesta);
 void robarOrdenador (tMazo & mazo, tMano & mano, tMano & manoJugador, tCarta & carta, int max_cartas);
 void jugarModoC (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta & carta, tProbabilidad array_probabilidad);
 void robarJugadorC (tMazo & mazo, tMano & mano, tCarta & carta);
@@ -65,8 +66,8 @@ bool guardarPartida (string titulo, tMano manoJugador, tMano manoOrdenador, bool
 
 int main ()
 {
-	srand(time(NULL));
-
+	srand(time(NULL)); // Semilla que ponemos para generar numeros aleatorios
+	// Variables
 	tMazo mazo;
 	tMano manoJugador, manoOrdenador;
 	tCarta carta;
@@ -74,9 +75,9 @@ int main ()
 	int opcion, numPartidas = 0;
 	bool ganaJugador = false;
 
-	opcion = menu ();
+	opcion = menu (); // Mostramos el menu
 
-	while (opcion != 5)
+	while (opcion != 5) // Mientras que no pulse salir seguimos ejecutando
 	{
 		numPartidas++;
 		if (opcion == 1 && cargarMazo (mazo)) // Modo A
@@ -87,7 +88,8 @@ int main ()
 			jugarModoC (mazo, manoJugador, manoOrdenador, carta, array_probabilidad);
 		else // Modo D
 			jugarModoD (mazo, manoJugador, manoOrdenador, carta, array_probabilidad);
-		if (manoJugador.valorMano <= 7.5)
+
+		if (manoJugador.valorMano <= 7.5) // Si el jugador se pasa de 7.5 directamente se acaba la partida
 		{
 			if(opcion == 4)
 				ganaJugador = determinarGanadorD (manoJugador, manoOrdenador);
@@ -97,7 +99,7 @@ int main ()
 		else
 			cout << "Gana el ordenador" << endl;
 
-		string aCadena = to_string (numPartidas);
+		string aCadena = to_string (numPartidas); // Convertimos el numero a string, para poder poner el nombre del fichero
 		if(guardarPartida (aCadena, manoJugador, manoOrdenador, ganaJugador, opcion))
 			cout << "Partida guardada" << endl;
 		opcion = menu();
@@ -312,6 +314,7 @@ void jugarModoB (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCart
 void robarJugador (tMazo & mazo, tMano & mano, tCarta & carta, int max_cartas)
 {
 	string respuesta;
+	bool correcto;
 
 	inicializarMano(mano);
 	sacarCarta (mazo, carta);
@@ -322,8 +325,8 @@ void robarJugador (tMazo & mazo, tMano & mano, tCarta & carta, int max_cartas)
 	mano.valorMano = sumarValorCarta (mano);
 	cout << "Quieres seguir robando? (si/no): ";
 	cin >> respuesta;
-	// COMPROBACION DE LA RESPUESTA
-	while (mano.cont < max_cartas && respuesta == "si" && mano.valorMano < 7.5)
+	correcto = comprobacionRespuesta (respuesta); // Comprobamos si la respuesta es valida
+	while (mano.cont < max_cartas && correcto == true && mano.valorMano < 7.5)
 	{
 		sacarCarta (mazo, carta);
 		asignarCarta(mano, carta);
@@ -335,10 +338,25 @@ void robarJugador (tMazo & mazo, tMano & mano, tCarta & carta, int max_cartas)
 		{
 			cout << "Quieres seguir robando? (si/no): ";
 			cin >> respuesta;
+			correcto = comprobacionRespuesta (respuesta); // Comprobamos si la respuesta es valida
 		}
 		else
 			cout << "Te has pasado de 7.5" << endl;
 	}
+}
+
+bool comprobacionRespuesta (string respuesta)
+{
+	bool correcto = true;
+
+	while (respuesta != "si" && respuesta != "Si" && respuesta != "SI" && respuesta != "no" && respuesta != "No" && respuesta != "NO")
+	{
+		cout << "Quieres seguir robando? (si/no): ";
+		cin >> respuesta;
+	}
+	if (respuesta == "no" || respuesta == "No" || respuesta == "NO")
+		correcto = false;
+	return correcto;
 }
 
 void robarOrdenador (tMazo & mazo, tMano & mano, tMano & manoJugador, tCarta & carta, int max_cartas)
@@ -376,6 +394,8 @@ void jugarModoC (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCart
 void robarJugadorC (tMazo & mazo, tMano & mano, tCarta & carta)
 {
 	string respuesta;
+	bool correcto;
+
 	inicializarMano(mano);
 	sacarCarta (mazo, carta);
 	asignarCarta(mano, carta);
@@ -386,8 +406,8 @@ void robarJugadorC (tMazo & mazo, tMano & mano, tCarta & carta)
 	cout << "La puntuacion del jugador es: " << mano.valorMano << endl;
 	cout << "Quieres seguir robando? (si/no): ";
 	cin >> respuesta;
-	// COMPROBACION DE LA RESPUESTA
-	while (mano.cont < mazo.cont && respuesta == "si")
+	correcto = comprobacionRespuesta (respuesta); // Comprobamos si la respuesta es valida
+	while (mano.cont < mazo.cont && correcto == true)
 	{
 		sacarCarta (mazo, carta);
 		asignarCarta(mano, carta);
@@ -398,6 +418,7 @@ void robarJugadorC (tMazo & mazo, tMano & mano, tCarta & carta)
 		cout << "La puntuacion del jugador es: " << mano.valorMano << endl;
 		cout << "Quieres seguir robando? (si/no): ";
 		cin >> respuesta;
+		correcto = comprobacionRespuesta (respuesta); // Comprobamos si la respuesta es valida
 	}
 }
 
@@ -561,6 +582,7 @@ bool guardarPartida (string titulo, tMano manoJugador, tMano manoOrdenador, bool
 	bool abierto = salida.is_open();
 	if (abierto)
 	{
+		// Escribimos el modo en el que hemos jugado
 		if (opcion == 1)
 			salida << "Modo A" << endl;
 		else if (opcion == 2)
@@ -569,6 +591,7 @@ bool guardarPartida (string titulo, tMano manoJugador, tMano manoOrdenador, bool
 			salida << "Modo C" << endl;
 		else
 			salida << "Modo D" << endl;
+		// Escribimos las cartas y la puntuacion de cada uno de los jugadores que han jugado
 		salida << "Las cartas del jugador fueron: ";
 		for (int i = 0; i < manoJugador.cont; i++)
 			salida << manoJugador.array_cartas[i].numero << " ";
@@ -579,6 +602,7 @@ bool guardarPartida (string titulo, tMano manoJugador, tMano manoOrdenador, bool
 			salida << manoOrdenador.array_cartas[i].numero << " ";
 		salida << endl;
 		salida << "La puntuacion del ordenador fue: " << manoOrdenador.valorMano << endl;
+		// Escribimos quien gano en la partida
 		if (ganaJugador)
 			salida << "Gano el jugador";
 		else
