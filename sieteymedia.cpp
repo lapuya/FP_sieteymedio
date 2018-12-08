@@ -38,11 +38,20 @@ typedef struct
 
 typedef int tProbabilidad [NUM_PROBABILIDAD];
 
+//FUNCIONES PRINCIPALES
 void mostrarMenu ();
 int menu ();
-bool cargarMazo (tMazo & mazo);
-void leerCartas (ifstream & entrada, tMazo & mazo);
 void jugarModoA (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta & carta);
+void jugarModoB (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta & carta);
+void jugarModoC (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta & carta, tProbabilidad array_probabilidad);
+void jugarModoD (tMazo &mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta &carta, tProbabilidad array_probabilidad);
+bool cargarMazo (tMazo & mazo);
+bool determinarGanador(float valorJugador, float valorOrdenador);
+bool determinarGanadorD(tMano & manoJugador, tMano & manoOrdenador);
+bool guardarPartida (string titulo, tMano manoJugador, tMano manoOrdenador, bool ganaJugador, int opcion);
+
+//FUNCIONES SECUNDARIAS
+void leerCartas (ifstream & entrada, tMazo & mazo);
 void crearMano (tMazo & mazo, tMano & mano, tCarta & carta, int num);
 void inicializarMano (tMano & mano);
 void sacarCarta (tMazo & mazo, tCarta & carta);
@@ -50,19 +59,14 @@ void eliminarCartaMazo (tMazo & mazo, int pos);
 void asignarCarta (tMano & mano, tCarta & carta);
 void mostrarMano (const tMano & mano);
 float sumarValorCarta (tMano & mano);
-bool determinarGanador(float valorJugador, float valorOrdenador);
-void jugarModoB (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta & carta);
 void robarJugador (tMazo & mazo, tMano & mano, tCarta & carta, int max_cartas);
 bool comprobacionRespuesta (string respuesta);
 void robarOrdenador (tMazo & mazo, tMano & mano, tMano & manoJugador, tCarta & carta, int max_cartas);
-void jugarModoC (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta & carta, tProbabilidad array_probabilidad);
-void robarJugadorC (tMazo & mazo, tMano & mano, tCarta & carta);
-void robarOrdenadorC (tMazo & mazo, tMano & mano, tMano & manoJugador, tCarta & carta, tProbabilidad array_probabilidad);
-float calcularProbabilidad (tMazo & mazo, tProbabilidad array_probabilidad, tMano & manoJugador);
-void jugarModoD (tMazo &mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta &carta, tProbabilidad array_probabilidad);
+void robarJugadorCD (tMazo & mazo, tMano & mano, tCarta & carta);
+void sacarYAsignarCarta(tMazo &mazo, tMano &mano, tCarta &carta);
+void robarOrdenadorCD (tMazo & mazo, tMano & mano, tMano & manoJugador, tCarta & carta, tProbabilidad array_probabilidad);
+bool calcularProbabilidad (tMazo & mazo, tProbabilidad array_probabilidad, tMano & manoJugador);
 void crearMazo (tMazo & mazo);
-bool determinarGanadorD(tMano & manoJugador, tMano & manoOrdenador);
-bool guardarPartida (string titulo, tMano manoJugador, tMano manoOrdenador, bool ganaJugador, int opcion);
 
 int main ()
 {
@@ -89,6 +93,7 @@ int main ()
 		else // Modo D
 			jugarModoD (mazo, manoJugador, manoOrdenador, carta, array_probabilidad);
 
+		// Determinamos ganador
 		if (manoJugador.valorMano <= 7.5) // Si el jugador se pasa de 7.5 directamente se acaba la partida
 		{
 			if(opcion == 4)
@@ -99,10 +104,12 @@ int main ()
 		else
 			cout << "Gana el ordenador" << endl;
 
+		// Guardamos la partida en fichero
 		string aCadena = to_string (numPartidas); // Convertimos el numero a string, para poder poner el nombre del fichero
 		if(guardarPartida (aCadena, manoJugador, manoOrdenador, ganaJugador, opcion))
 			cout << "Partida guardada" << endl;
-		opcion = menu();
+
+		opcion = menu(); // Volvemos a preguntar
 	}
 	return 0;
 }
@@ -145,11 +152,11 @@ bool cargarMazo (tMazo & mazo)
 	ifstream entrada;
 	string nombre_archivo;
 
-	cout << "Introduce el nombre del archivo: ";
+	cout << "Introduce el nombre del archivo: "; // Se pide por pantalla el nombre del archivo
 	cin >> nombre_archivo;
 	entrada.open (nombre_archivo);
 	abierto = entrada.is_open();
-	if (abierto)
+	if (abierto) 								// Si el archivo se ha conseguido abrir, leemos cartas
 		leerCartas (entrada, mazo);
 	else
 		cout << "Hubo problemas al abrir el archivo o no existe." << endl;
@@ -166,23 +173,28 @@ void leerCartas (ifstream & entrada, tMazo & mazo)
 		entrada >> mazo.array_cartas[i].numero;
 		getline (entrada, basura); // Para saltar la fila
 	}
-	mazo.cont = NUM_CARTAS;
+	mazo.cont = NUM_CARTAS; // Numero de cartas = 40
 }
 
 void jugarModoA (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta & carta)
 {
 	int num = 3 + rand() % (6 - 3); // Calcula el numero de cartas (aleatoriamente) que tienen que robar los jugadores
 	cout << "El numero aleatorio es: " << num << endl;
+
+	cout << "------TURNO JUGADOR------" << endl;
 	crearMano (mazo, manoJugador, carta, num);
-	cout << "La mano del jugador es: ";
+	cout << "La mano es: ";
 	mostrarMano(manoJugador);
 	cout << endl;
 	manoJugador.valorMano = sumarValorCarta(manoJugador);
 	cout << "El valor de la mano del jugador es: " << manoJugador.valorMano << endl;
-	if (manoJugador.valorMano <= 7.5)
+
+	if (manoJugador.valorMano <= 7.5)		// Si el jugador se pasa, se acaba la partida automaticamente
 	{
+		// Creamos la mano del ordenador
+		cout << "------TURNO ORDENADOR------"
 		crearMano (mazo, manoOrdenador, carta, num);
-		cout << "La mano del ordenador es: ";
+		cout << "La mano es: ";
 		mostrarMano(manoOrdenador);
 		cout << endl;
 		manoOrdenador.valorMano = sumarValorCarta(manoOrdenador);
@@ -193,7 +205,8 @@ void jugarModoA (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCart
 void crearMano (tMazo & mazo, tMano & mano, tCarta & carta, int num)
 {
 	inicializarMano (mano);
-	for (int i = 0; i < num; i++)
+
+	for (int i = 0; i < num; i++)			// Sacamos tantas veces el numero aleatorio
 	{
 		sacarCarta (mazo, carta);
 		asignarCarta (mano, carta);
@@ -202,6 +215,7 @@ void crearMano (tMazo & mazo, tMano & mano, tCarta & carta, int num)
 
 void inicializarMano (tMano & mano)
 {
+	// Para saber cuantas cartas tiene en la mano y su valor
 	mano.cont = 0;
 	mano.valorMano = 0;
 }
@@ -213,20 +227,20 @@ void sacarCarta (tMazo & mazo, tCarta & carta)
 	if (mazo.cont != 0)
 	{
 		carta = mazo.array_cartas[i];
-		eliminarCartaMazo (mazo, i);
+		eliminarCartaMazo (mazo, i);	// Borramos del mazo la carta sacada
 	}
 }
 
 void eliminarCartaMazo (tMazo & mazo, int pos)
 {
 	for (int i = pos + 1; i < mazo.cont; i++)
-		mazo.array_cartas[i-1] = mazo.array_cartas[i];
+		mazo.array_cartas[i-1] = mazo.array_cartas[i];		// Movemos todas las cartas a la posicion anterior
 	mazo.cont--;
 }
 
 void asignarCarta (tMano & mano, tCarta & carta)
 {
-	mano.array_cartas[mano.cont] = carta;
+	mano.array_cartas[mano.cont] = carta;		// Lo introducimos en la mano del jugador
 	mano.cont++;
 }
 
@@ -240,9 +254,9 @@ float sumarValorCarta (tMano & mano)
 {
 	float suma = 0;
 
-	for (int i = 0; i < mano.cont; i++)
+	for (int i = 0; i < mano.cont; i++)		// Sumamos el valor de toda la mano
 	{
-		if (mano.array_cartas[i].numero == 10 || mano.array_cartas[i].numero == 11 || mano.array_cartas[i].numero == 12)
+		if (mano.array_cartas[i].numero == 10 || mano.array_cartas[i].numero == 11 || mano.array_cartas[i].numero == 12)	// 10, 11 y 12 valen 0.5
 			suma = suma + 0.5;
 		else
 			suma = suma + mano.array_cartas[i].numero;
@@ -267,15 +281,16 @@ bool determinarGanador(float valorJugador, float valorOrdenador)
 		else
 			cout << "Gana el ordenador" << endl;
 	}
-	else
+	else 		// Si no han empatado
 	{
-		if (valorJugador < valorOrdenador && valorOrdenador > 7.5)
+		if (valorJugador < valorOrdenador && valorOrdenador > 7.5) 	// Si el ordenador se pasa y el jugador no
 		{
 			cout << "Gana el jugador" << endl;
 			ganaJugador = true;
 		}
 		else
 		{
+			// Saber quien se ha acercado mas a 7.5
 			resta1 = 7.5 - valorJugador;
 			resta2 = 7.5 - valorOrdenador;
 			if (resta1 < resta2)
@@ -294,16 +309,19 @@ void jugarModoB (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCart
 {
 	int max_cartas = 3+rand()%(6-3); // Calcula el numero de cartas (aleatoriamente) que tienen que robar los jugadores
 	cout << "El numero aleatorio es: " << max_cartas << endl;
-	robarJugador (mazo, manoJugador, carta, max_cartas);
-	cout << "La mano del jugador es: ";
+
+	cout << "------TURNO JUGADOR------" << endl;
+	robarJugador (mazo, manoJugador, carta, max_cartas);		// Pueden elegir si robar o no
+	cout << "La mano es: ";
 	mostrarMano(manoJugador);
 	cout << endl;
 	manoJugador.valorMano = sumarValorCarta(manoJugador);
-	cout << "El valor de la mano del jugador es: " << manoJugador.valorMano << endl;
+	cout << "El valor de la mano es: " << manoJugador.valorMano << endl;
 	if (manoJugador.valorMano <= 7.5)
 	{
+		cout << "------TURNO ORDENADOR------" << endl;
 		robarOrdenador (mazo, manoOrdenador, manoJugador, carta, max_cartas);
-		cout << "La mano del ordenador es: ";
+		cout << "La mano es: ";
 		mostrarMano(manoOrdenador);
 		cout << endl;
 		manoOrdenador.valorMano = sumarValorCarta(manoOrdenador);
@@ -317,28 +335,17 @@ void robarJugador (tMazo & mazo, tMano & mano, tCarta & carta, int max_cartas)
 	bool correcto;
 
 	inicializarMano(mano);
-	sacarCarta (mazo, carta);
-	asignarCarta(mano, carta);
-	cout << "La mano del jugador es: ";
-	mostrarMano(mano);
-	cout << endl;
-	mano.valorMano = sumarValorCarta (mano);
+	sacarYAsignarCarta(mazo, mano, carta);			// Funcion que permite sacar del mazo
 	cout << "Quieres seguir robando? (si/no): ";
 	cin >> respuesta;
-	correcto = comprobacionRespuesta (respuesta); // Comprobamos si la respuesta es valida
-	while (mano.cont < max_cartas && correcto == true && mano.valorMano < 7.5)
+
+	while (mano.cont < max_cartas && comprobacionRespuesta(respuesta) && mano.valorMano < 7.5)  // Comprobamos si la respuesta es valida
 	{
-		sacarCarta (mazo, carta);
-		asignarCarta(mano, carta);
-		cout << "La mano del jugador es: ";
-		mostrarMano(mano);
-		cout << endl;
-		mano.valorMano = sumarValorCarta (mano);
+		sacarYAsignarCarta(mazo, mano, carta);
 		if (mano.valorMano < 7.5)
 		{
 			cout << "Quieres seguir robando? (si/no): ";
 			cin >> respuesta;
-			correcto = comprobacionRespuesta (respuesta); // Comprobamos si la respuesta es valida
 		}
 		else
 			cout << "Te has pasado de 7.5" << endl;
@@ -348,6 +355,8 @@ void robarJugador (tMazo & mazo, tMano & mano, tCarta & carta, int max_cartas)
 bool comprobacionRespuesta (string respuesta)
 {
 	bool correcto = true;
+
+	// Comprobamos si la respuesta es correcta dando todas las combinaciones posibles
 
 	while (respuesta != "si" && respuesta != "Si" && respuesta != "SI" && respuesta != "no" && respuesta != "No" && respuesta != "NO")
 	{
@@ -362,102 +371,82 @@ bool comprobacionRespuesta (string respuesta)
 void robarOrdenador (tMazo & mazo, tMano & mano, tMano & manoJugador, tCarta & carta, int max_cartas)
 {
 	inicializarMano(mano);
-	sacarCarta (mazo, carta);
-	asignarCarta(mano, carta);
-	cout << "La mano del ordenador es: ";
-	mostrarMano(mano);
-	cout << endl;
-	mano.valorMano = sumarValorCarta (mano);
-	while (mano.cont < max_cartas && mano.valorMano < manoJugador.valorMano)
-	{
-		sacarCarta (mazo, carta);
-		asignarCarta(mano, carta);
-		cout << "La mano del ordenador es: ";
-		mostrarMano(mano);
-		cout << endl;
-		mano.valorMano = sumarValorCarta (mano);
-	}
+	sacarYAsignarCarta(mazo, mano, carta);
+
+	while (mano.cont < max_cartas && mano.valorMano < manoJugador.valorMano) // Mientras que su valor sea menor que el del jugador, sigue robando
+		sacarYAsignarCarta(mazo, mano, carta);
+
 }
 
 void jugarModoC (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta & carta, tProbabilidad array_probabilidad)
 {
-	robarJugadorC (mazo, manoJugador, carta);
+	cout << "------TURNO DEL JUGADOR------" << endl;
+	robarJugadorCD (mazo, manoJugador, carta);
 	cout << "La mano del jugador es: ";
 	mostrarMano(manoJugador);
 	cout << endl;
-	robarOrdenadorC (mazo, manoOrdenador, manoJugador, carta, array_probabilidad);
+	cout << "------TURNO DEL ORDENADOR------" << endl;
+	robarOrdenadorCD (mazo, manoOrdenador, manoJugador, carta, array_probabilidad);
 	cout << "La mano del ordenador es: ";
 	mostrarMano(manoOrdenador);
 	cout << endl;
 }
 
-void robarJugadorC (tMazo & mazo, tMano & mano, tCarta & carta)
+void robarJugadorCD (tMazo & mazo, tMano & mano, tCarta & carta)
 {
 	string respuesta;
-	bool correcto;
 
 	inicializarMano(mano);
-	sacarCarta (mazo, carta);
-	asignarCarta(mano, carta);
-	cout << "La mano del jugador es: ";
-	mostrarMano(mano);
-	cout << endl;
-	mano.valorMano = sumarValorCarta (mano);
-	cout << "La puntuacion del jugador es: " << mano.valorMano << endl;
+	sacarYAsignarCarta(mazo, mano, carta);
 	cout << "Quieres seguir robando? (si/no): ";
 	cin >> respuesta;
-	correcto = comprobacionRespuesta (respuesta); // Comprobamos si la respuesta es valida
-	while (mano.cont < mazo.cont && correcto == true)
+
+	while (mano.cont < mazo.cont && comprobacionRespuesta(respuesta)) // Comprobamos si la respuesta es valida
 	{
-		sacarCarta (mazo, carta);
-		asignarCarta(mano, carta);
-		cout << "La mano del jugador es: ";
-		mostrarMano(mano);
-		cout << endl;
-		mano.valorMano = sumarValorCarta (mano);
-		cout << "La puntuacion del jugador es: " << mano.valorMano << endl;
+		sacarYAsignarCarta(mazo, mano, carta);
 		cout << "Quieres seguir robando? (si/no): ";
 		cin >> respuesta;
-		correcto = comprobacionRespuesta (respuesta); // Comprobamos si la respuesta es valida
+
 	}
 }
 
-void robarOrdenadorC (tMazo & mazo, tMano & mano, tMano & manoJugador, tCarta & carta, tProbabilidad array_probabilidad)
-{
-	float probabilidad;
-	inicializarMano(mano);
+void sacarYAsignarCarta(tMazo &mazo, tMano &mano, tCarta &carta){
+
+	// Sacamos, asignamos, mostramos la mano y sumamos los valores de la mano
 	sacarCarta (mazo, carta);
 	asignarCarta(mano, carta);
-	cout << "La mano del ordenador es: ";
+	cout << "La mano es: ";
 	mostrarMano(mano);
 	cout << endl;
 	mano.valorMano = sumarValorCarta (mano);
-	cout << "La puntuacion del ordenador es: " << mano.valorMano << endl;
+	cout << "La puntuacion es: " << mano.valorMano << endl;
+}
+
+void robarOrdenadorCD (tMazo & mazo, tMano & mano, tMano & manoJugador, tCarta & carta, tProbabilidad array_probabilidad)
+{
+	inicializarMano(mano);
+	sacarYAsignarCarta(mazo, mano, carta);
 	if (manoJugador.valorMano <= 7.5)
 	{
-		probabilidad = calcularProbabilidad (mazo, array_probabilidad, manoJugador);
-		while (mano.cont < mazo.cont && mano.valorMano <= manoJugador.valorMano && probabilidad < 0.50) // Empate: probabilidad de pasarse supera el 50%
+		while (mano.cont < mazo.cont && mano.valorMano <= manoJugador.valorMano)
+			sacarYAsignarCarta(mazo, mano, carta);
+
+		if (mano.valorMano == manoJugador.valorMano)
 		{
-			sacarCarta (mazo, carta);
-			asignarCarta(mano, carta);
-			cout << "La mano del ordenador es: ";
-			mostrarMano(mano);
-			cout << endl;
-			mano.valorMano = sumarValorCarta (mano);
-			cout << "La puntuacion del ordenador es: " << mano.valorMano << endl;
-			probabilidad = calcularProbabilidad (mazo, array_probabilidad, manoJugador);
+			if (calcularProbabilidad (mazo, array_probabilidad, manoJugador)) // Empate: probabilidad de pasarse supera el 50%
+				sacarYAsignarCarta(mazo, mano, carta);
 		}
 	}
 }
 
-float calcularProbabilidad (tMazo & mazo, tProbabilidad array_probabilidad, tMano & manoJugador)
+bool calcularProbabilidad (tMazo & mazo, tProbabilidad array_probabilidad, tMano & manoJugador)
 {
 	float probabilidad = 0, suma = 0;
 	int resta = 0;
-
+	// Creamos un array con los tipos de cartas
 	for (int i = 0; i < 8; i++)
 		array_probabilidad[i] = 0;
-
+	// Leemos las cartas que quedan en la mazo y las metemos en el array de probabilidad
 	for (int i = 0; i < mazo.cont; i++)
 	{
 		if (mazo.array_cartas[i].numero == 10 || mazo.array_cartas[i].numero == 11 || mazo.array_cartas[i].numero == 12)
@@ -478,27 +467,30 @@ float calcularProbabilidad (tMazo & mazo, tProbabilidad array_probabilidad, tMan
 			array_probabilidad[7] = array_probabilidad[7] + 1;
 	}
 
-	resta = 7.5 - manoJugador.valorMano;
+	resta = 7.5 - manoJugador.valorMano;	// Calculamos desde que cartas tenemos que hacer la probabilidad
 	cout << "La resta es: " << resta << endl;
 	for (int j = resta + 1; j < 8; j++)
-		suma = suma + array_probabilidad[j];
+		suma = suma + array_probabilidad[j];	// Sumamos desde la posicion valida hasta el final
 	cout << "La suma de las cartas es: " << suma << endl;
 	cout << "Cartas mazo: "<< mazo.cont << endl;
-	probabilidad = suma / mazo.cont;
+	probabilidad = suma / mazo.cont;	// Calculamos la probabilidad
 	cout << "La probabilidad es: " << probabilidad << endl;
 
-	return probabilidad;
+	return probabilidad < 0.50;
 }
 
 void jugarModoD (tMazo & mazo, tMano & manoJugador, tMano & manoOrdenador, tCarta & carta, tProbabilidad array_probabilidad)
 {
 	crearMazo (mazo);
-	robarJugadorC(mazo, manoJugador, carta);
-	robarOrdenadorC(mazo, manoOrdenador, manoJugador, carta, array_probabilidad);
+	cout << "------TURNO JUGADOR------" << endl;
+	robarJugadorCD(mazo, manoJugador, carta);
+	cout << "------TURNO ORDENADOR------" << endl;
+	robarOrdenadorCD(mazo, manoOrdenador, manoJugador, carta, array_probabilidad);
 }
 
 void crearMazo (tMazo & mazo)
 {
+	// Creamos el mazo con varios bucles for con la cantidad de cartas de cada tipo
 	for (int i = 0; i < 4; i++)
 		mazo.array_cartas[i].numero = 1;
 	for (int i = 4; i < 8; i++)
@@ -529,7 +521,7 @@ bool determinarGanadorD(tMano & manoJugador, tMano & manoOrdenador)
 	int num, resta1, resta2;
 	bool ganaJugador = false;
 
-	if(manoJugador.valorMano == manoOrdenador.valorMano)
+	if(manoJugador.valorMano == manoOrdenador.valorMano) 		// Si empatan, gana quien tenga menos cartas en la mano
 	{
 		if(manoJugador.cont < manoOrdenador.cont)
 		{
@@ -540,7 +532,7 @@ bool determinarGanadorD(tMano & manoJugador, tMano & manoOrdenador)
 			cout << "Habeis empatado. Gana el ordenador porque tiene menos cartas en la mano." << endl;
 		else
 		{
-			cout << "Habeis empatado, se elegira a un ganador de forma aleatoria: " << endl;
+			cout << "Habeis empatado, se elegira a un ganador de forma aleatoria: " << endl;		// Aleatorio si tienen el mismo numero de cartas
 			num = 1+rand()%(3-1);
 			if (num == 1)
 			{
@@ -560,7 +552,7 @@ bool determinarGanadorD(tMano & manoJugador, tMano & manoOrdenador)
 		}
 		else
 		{
-			resta1 = 7.5 - manoJugador.valorMano;
+			resta1 = 7.5 - manoJugador.valorMano;				// Gana quien se acerque mas a 7.5
 			resta2 = 7.5 - manoOrdenador.valorMano;
 			if (resta1 < resta2)
 			{
